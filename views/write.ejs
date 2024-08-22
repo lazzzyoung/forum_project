@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>글 작성</title>
+    <link rel = "stylesheet" href = "/main.css">
+</head>
+<body>
+    <%- include('nav.ejs') %>
+    
+    <form class="form-box" action = "/newpost" method="post" enctype="multipart/form-data">
+        <h4>글쓰기</h4>
+        
+        <input name = "title" required placeholder="제목을 작성해주세요.">
+        <input name = "content" required placeholder="내용을 작성해주세요.">
+        
+        <input name = "image" type = "file" accept="image/*" multiple >
+        <button type="submit">전송</button>
+    </form> 
+    
+</body>
+</html>

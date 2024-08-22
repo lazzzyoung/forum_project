@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KHU Secret Forum</title>
+    <link rel="stylesheet" href = '/main.css'>
+</head>
+
+<body class = "grey-bg">
+    <%- include('nav.ejs') %>
+    <form action = "/list/search" method="post">
+        <input class="search" name = "title" >
+        <button class="search-send">검색</button> 
+    </form>
+    
+    <div class="white-bg">
+        
+        <% for (let i = 0; i < textlist.length; i++) { %>
+            
+            <div class="list-box">
+                
+                <h4>
+                    <a href = "/list/<%- textlist[i]._id %>" ><%- textlist[i].title %></a>
+                    <a href = "/edit/<%- textlist[i]._id %>">🖌️</a>
+                    <span class = "delete" data-id ="<%=textlist[i]._id%>">🗑️</span>
+                    <!-- data-id 는 html에 데이터를 보관해둘수있으며 꺼내쓰는방법은
+                    .target.dataset.id로 꺼내쓴다 -->
+                </h4>
+                
+                <p><%- JSON.stringify(textlist[i].content) %></p>
+                
+            </div>
+
+        <% } %>
+        
+        
+           
+        <script>
+            for(let i = 0; i < '<%-textlist.length%>' ; i++){
+
+                // document.querySelectorAll('.delete')[i].addEventListener('click',function(num){
+                //     fetch('/delete?docid='+ num.target.dataset.id,{
+                //         method : 'DELETE',
+                        
+                //     }) 
+                // })
+                document.querySelectorAll('.delete')[i].addEventListener('click', function(e){
+                    fetch('/delete?docid=' + e.target.dataset.id, {
+                        method : 'DELETE',
+                    })
+                    .then((r)=>r.text())
+                    .then((r)=>{
+                        e.target.parentElement.parentElement.style.display = 'none'
+                    })
+                    }) 
+            }
+            
+        </script>
+
+      </div> 
+      <div class="white-bg" >
+        <a class="page" href="/list/page/1">1</a>
+        <a class="page" href="/list/page/2">2</a>
+        <a class="page" href="/list/page/3">3</a>
+        <a class="page" href="/list/page/4">4</a>
+        <a class="page" href="/list/page/5">5</a>
+      </div>
+</body>
+</html>

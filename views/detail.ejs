@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>상세 페이지</title>
+    <link rel = "stylesheet" href = "/main.css">
+</head>
+<body class = "grey-bg">
+    <%- include('nav.ejs') %>
+    
+    <div class="detail-bg">
+        
+                <h4><%- detailpost.title %></h4>
+                <%if (detailpost.image != null ){ %>
+                <%for(let i = 0; i < detailpost.image.length ; i++){ %>
+                    <img src = "<%- detailpost.image[i] %>">
+                <% }} %>
+        
+                <p><%- detailpost.content %></p>
+            
+                <hr style="margin-top: 60px">
+                
+                <form action="/comment" method="POST">
+                    <input name="comment">
+                    <input name="parentId" value="<%= detailpost._id %>"  style="display: none">
+                    <button type="submit">댓글작성</button>
+                </form>
+                
+                <div>
+                    <% for(let i = 0 ; i < detailcomment.length ; i++){ %>
+                        <p>
+                            <strong><%-detailcomment[i].writer%></strong> 
+                            <%-detailcomment[i].comment%>
+                        </p>
+                    <%}%>
+                </div>
+
+        
+    </div> 
+    
+</body>
+</html>

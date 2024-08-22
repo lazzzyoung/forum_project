@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>글 수정</title>
+    <link rel = "stylesheet" href = "/main.css">
+</head>
+<body>
+    <%- include('nav.ejs') %>
+    
+    <form class="form-box" action = "/editpost/<%- detailpost._id %>?_method=PUT" method="post">
+        <h4>글 수정</h4>
+        <input name = "title" value = "<%- detailpost.title %>">
+        <input name = "content" value = "<%- detailpost.content %>">
+        <button type="submit">전송</button>
+    </form> 
+    
+</body>
+</html>
