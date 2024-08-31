@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KHU Secret Forum</title>
+    <link rel="stylesheet" href = '/main.css'>
+</head>
+
+<body class = "grey-bg">
+    <%- include('nav.ejs') %>
+    <!-- <form action = "/list/search" method="post">
+        <input class="search" name = "title" >
+        <button class="search-send">검색</button> 
+    </form> -->
+    
+    <div class="white-bg">
+        
+        <% for (let i = 0; i < chatrooms.length; i++) { %>
+            
+            <div class="list-box">
+                
+                <h4>
+                    <a href = "/chat/<%-chatrooms[i].member[1]%>" >채팅방 제목</a>
+                    
+                    
+                    <!-- data-id 는 html에 데이터를 보관해둘수있으며 꺼내쓰는방법은
+                    .target.dataset.id로 꺼내쓴다 -->
+                </h4>
+                
+                <p><%- JSON.stringify(chatrooms[i].content) %></p>
+                
+            </div>
+
+        <% } %>
+        
+        
+           
+        
+
+      
+</body>
+</html>

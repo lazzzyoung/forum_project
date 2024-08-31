@@ -45,6 +45,7 @@
                         
                 //     }) 
                 // })
+                if(userdata)
                 document.querySelectorAll('.delete')[i].addEventListener('click', function(e){
                     fetch('/delete?docid=' + e.target.dataset.id, {
                         method : 'DELETE',

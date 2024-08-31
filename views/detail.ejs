@@ -18,8 +18,16 @@
                 <% }} %>
         
                 <p><%- detailpost.content %></p>
+
+                <a href = "/chatlist/<%-detailpost._id%>?writer=<%-detailpost.writerId %>">채팅하기</a>
+
+                <!-- <form action="/chatlist/<%-detailpost._id%>" method="POST">
+                    
+                    <input name="requestId" value="<%= userdata._id %>"  style="display: none">
+                    <button type="submit">채팅하기</button>
+                </form> -->
             
-                <hr style="margin-top: 60px">
+                <hr style="margin-top: 30px">
                 
                 <form action="/comment" method="POST">
                     <input name="comment">

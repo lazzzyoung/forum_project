@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>상세 페이지</title>
+    <link rel = "stylesheet" href = "/main.css">
+</head>
+<body class = "grey-bg">
+    <%- include('nav.ejs') %>
+    
+    <div class="detail-bg">
+        <div class="chat-screen">
+            <div class="chat-box">
+                <span>👤<b><%-mainuser.writer%></b></span>
+                <span>안녕하세요</span>
+            </div>
+            <div class="chat-box">
+                <span>👤<b><%-mainuser.writer%></b></span>
+                <span>안녕하세요</span>
+            </div>
+            <div class="chat-box mine">
+                <span>안녕하세요</span>
+                <span><b><%-subuser.username%></b>👤</span>
+            </div>
+        </div>
+      </div>
+      <div class="chat-form">
+        <input class="chat-input">
+        <button class="chat-button">전송</button>
+  </div> 
+    
+    
+    <script src="https://cdn.jsdelivr.net/npm/socket.io@4.7.2/client-dist/socket.io.min.js"></script>  
+    <script>
+        const socket = io() 
+        socket.emit('ask-join','<%-chatrooms%._id>')
+
+        document.querySelector(".chat-button").addEventListener('click',
+        function(){
+            let chatmsg = document.querySelector('.chat-input').value
+            socket.emit('message',{ msg : chatmsg , room :'<%-chatrooms%._id>' })
+        })
+        
+        socket.on('broadmsg',(msg)=>{
+            documemt.querySelector('.chat-screen').insertAdjacentHTML('beforeend',
+            `<div class="chat-box">
+                <span>👤<b><%-mainuser.writer%></b></span>
+                <span>${msg}</span>
+            </div>`
+          )
+        })
+    </script>
+</body>
+</html>

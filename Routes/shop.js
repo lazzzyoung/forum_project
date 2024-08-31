@@ -1,7 +1,7 @@
 // API 쪼개기 연습용
 const router = require('express').Router()
 // DB 구축
-let connectDB = require('./../database.js')
+let connectDB = require('../database.js')
 
 let db
 connectDB.then((client)=>{

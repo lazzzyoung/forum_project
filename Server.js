@@ -16,6 +16,11 @@ const MongoStore = require("connect-mongo")
 const session = require('express-session')
 const passport = require('passport')
 const LocalStrategy = require('passport-local')
+// #n. socket io 라이브러리 setup
+const { createServer } = require('http')
+const { Server } = require('socket.io')
+const server = createServer(app)
+const io = new Server(server) 
 // #11. s3에 이미지 등록을 위한 multer 라이브러리 set up
 const { S3Client } = require('@aws-sdk/client-s3')
 const multer = require('multer')
@@ -70,12 +75,19 @@ connectDB.then((client)=>{
     console.log('DB연결성공')
     db = client.db(process.env.DB_NAME)
   // #1. Server 생성 코드
-    app.listen(process.env.PORT, () => {
+    server.listen(process.env.PORT, () => {
 })
 }).catch((err)=>{
   console.log(err)
 })
 
+// login 함수
+function checklogin (request, response, next) {
+    if (!request.user){
+        response.render("login.ejs");
+    }
+    else { next()}
+}
 
 
 app.get('/',(request , response)=> {
@@ -93,27 +105,30 @@ app.get('/time',(request , response)=> {
     response.render("time.ejs", {"Servertime" : new Date()});
 })  
 
-app.get('/list', async(request , response)=> {
+app.get('/list' , async(request , response)=> {
     
     let content = await db.collection('post').find().toArray();
     // response.render("list.ejs", { "textlist" : content});
     response.redirect('/list/page/1')
 })
-//이거 복구해야함, page 별로 나누는거랑 detail page 로가는거랑 곂침
-app.get('/list/page/:pagenum', async(request , response)=> {
+
+app.get('/list/page/:pagenum' , async(request , response)=> {
     
+    let userdata = request.user
     let content = await db.collection('post').find().skip((request.params.pagenum-1)*5).limit(5).toArray();
-    response.render("list.ejs", { "textlist" : content});
+    response.render("list.ejs", { "textlist" : content , "userdata" : request.user});
 })
-app.get('/list/:postid',async(request,response)=> {
+//detail page
+app.get('/list/:postid',checklogin ,async(request,response)=> {
     
     try { 
 
         let detailpost = await db.collection('post').findOne({_id : new ObjectId(request.params.postid)});
         let detailcomment = await db.collection('comments').find({parentId : new ObjectId(request.params.postid)}).toArray()
-        response.render('detail.ejs',{ "detailpost" : detailpost , "detailcomment" : detailcomment })
 
-        console.log(detailcomment)
+        response.render('detail.ejs',{ "detailpost" : detailpost , "detailcomment" : detailcomment ,"userdata" : request.user })
+
+        // console.log(request.user)
 
         if (detailpost == null){ // Post id의 길이나 순서가 맞는것으로 인식해 db에서 찾기까지했음 하지만없는 데이터라 null 로 표시
             response.status(404).send("존재하지 않는 글입니다.")
@@ -143,7 +158,32 @@ app.post('/list/search',async(request,response)=> {
         
 })
 
-app.get('/write',async(request , response)=> {
+app.get('/chatlist/:postid', checklogin, async(request, response)=>{
+    
+    let mainuser = await db.collection('post').findOne({_id : new ObjectId(request.params.postid)})
+    
+    await db.collection('chatroom').insertOne({
+        member : [request.user._id, new ObjectId(mainuser.writerId)] ,
+        Date : new Date()
+        // 채팅내용 들어가면 좋을것같은데 자식요소로 넣을것같음
+    })
+    let chatrooms = await db.collection('chatroom').find({member : request.user._id}).toArray()
+    
+    response.render("chattingroom.ejs",{"subuser":request.user, "mainuser": mainuser,"chatrooms":chatrooms})
+})
+app.get('/chat/:mainid', checklogin, async(request, response)=>{
+    
+    let mainuser = await db.collection('post').findOne({writerId : new ObjectId(request.params.mainid)})
+    let chatrooms = await db.collection('chatroom').find({member : request.user._id}).toArray()
+    response.render("chattingroom.ejs",{"subuser":request.user, "mainuser": mainuser,"chatrooms":chatrooms})
+
+})
+app.get('/mypage/chatlist', checklogin, async(request,response)=>{
+    let chatrooms = await db.collection('chatroom').find({member : request.user._id}).toArray()
+    response.render("chatlist.ejs", {"chatrooms":chatrooms})
+})
+
+app.get('/write',checklogin ,async(request , response)=> {
 
     response.render("write.ejs");
 })  
@@ -151,11 +191,8 @@ app.get('/register',async(request , response)=> {
 
     response.render("register.ejs");
 })  
-app.get('/login',async(request , response)=> {
-    console.log(request.user)
-    response.render("login.ejs");
-})  
-app.get('/edit/:postid',async(request , response)=> {
+
+app.get('/edit/:postid',checklogin ,async(request , response)=> {
     
     let detailpost = await db.collection('post').findOne({_id : new  ObjectId(request.params.postid)})
     response.render("edit.ejs", {"detailpost" : detailpost});
@@ -163,7 +200,7 @@ app.get('/edit/:postid',async(request , response)=> {
 
 
 
-app.post('/newpost',async(request,response) => {
+app.post('/newpost',checklogin ,async(request,response) => {
 
     //request.file or files 로 저장된 URL 및 다른 정보들 확인 가능 , 이미지 URL 은 location
     upload.array('image', 3)(request, response, async(err)=>{
@@ -189,7 +226,9 @@ app.post('/newpost',async(request,response) => {
                     "title":request.body.title , 
                     "content":request.body.content, 
                     "image" : imageLocations,
-                    
+                    "writerId" : new ObjectId(request.user._id),
+                    "writer" : request.user.username
+                    //여기서 parent id가 이 글 자체의 id 라 생략해도될것같음
                     });
                 response.redirect("/list")
                 console.log("작성완료")
@@ -268,13 +307,14 @@ passport.deserializeUser(async(user, done) => {
   })
 
 app.get('/login',async(request , response)=> {
-    console.log(request.user)
+    // console.log(request.user)
     response.render("login.ejs");
 })  
-app.get('/mypage',async(request , response)=> {
-    console.log(request.user)
+app.get('/mypage',checklogin ,async(request , response)=> {
+    // console.log(request.user)
     response.render("mypage.ejs");
 })  
+
 app.post('/login',async(request,response,next) => {
     
     passport.authenticate('local', (error, user, info) => {
@@ -288,7 +328,7 @@ app.post('/login',async(request,response,next) => {
     
 })
 // 수정기능을 put 으로 사용하여 적용
-app.put('/editpost/:postid',async(request,response) => {
+app.put('/editpost/:postid',checklogin ,async(request,response) => {
     
     db.collection('post').updateOne(
         {_id: new ObjectId(request.params.postid)} , 
@@ -298,14 +338,14 @@ app.put('/editpost/:postid',async(request,response) => {
     
 })
 
-app.delete('/delete',async(request, response)=>{
+app.delete('/delete',checklogin ,async(request, response)=>{
 
     await db.collection('post').deleteOne({_id: new ObjectId(request.query.docid)} ) 
     response.send("삭제완료")
     
 })
 
-app.post('/comment', async(request, response)=>{
+app.post('/comment',checklogin , async(request, response)=>{
     
     await db.collection('comments').insertOne({
         "comment" : request.body.comment ,
@@ -316,6 +356,20 @@ app.post('/comment', async(request, response)=>{
     
     response.redirect('back')
 })
+
+
+io.on(connection,(socket)=>{
+    console.log(request.user.username + "연결됨")
+
+    socket.on('ask-join',(room)=>{
+        socket.join(room)
+    })
+
+    socket.on('message',(data)=>{
+        io.to(data.room).emit('broadmsg'= data.msg)
+    })
+})
+
 
 
 
